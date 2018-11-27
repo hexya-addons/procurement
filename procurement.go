@@ -267,12 +267,13 @@ the procurement manager to force an unusual behavior.`},
 
 	h.ProcurementOrder().Methods().RunScheduler().DeclareMethod(
 		`RunScheduler calls the scheduler to check the procurement order.
-              This is intented to be done for all existing companies at the
-              same time, so we're running all the methods as SUPERUSER to
-              avoid intercompany and access rights issues.
 
-			  If useNewCursor is set, each procurement run is done in a new
-              environment with a new cursor. This is appropriate for batch jobs only.`,
+         This is intended to be done for all existing companies at the
+         same time, so we're running all the methods as SUPERUSER to
+         avoid intercompany and access rights issues.
+
+		 If useNewCursor is set, each procurement run is done in a new
+         environment with a new cursor. This is appropriate for batch jobs only.`,
 		func(rs h.ProcurementOrderSet, useNewCursor bool, company h.CompanySet) {
 			procurementSudo := h.ProcurementOrder().NewSet(rs.Env()).Sudo()
 			// Run confirmed procurements
