@@ -112,7 +112,7 @@ the procurement manager to force an unusual behavior.`},
 	//		  */})
 
 	h.ProcurementOrder().Methods().Create().Extend("",
-		func(rs h.ProcurementOrderSet, data *h.ProcurementOrderData, fieldsToReset ...models.FieldNamer) h.ProcurementOrderSet {
+		func(rs h.ProcurementOrderSet, data *h.ProcurementOrderData) h.ProcurementOrderSet {
 			procurement := rs.Super().Create(data)
 			if !rs.Env().Context().HasKey("procurement_autorun_defer") {
 				procurement.Run(false)
@@ -141,13 +141,12 @@ the procurement manager to force an unusual behavior.`},
 
 	h.ProcurementOrder().Methods().OnchangeProduct().DeclareMethod(
 		`OnchangeProduct updates the UI when the user changes product`,
-		func(rs h.ProcurementOrderSet) (*h.ProcurementOrderData, []models.FieldNamer) {
+		func(rs h.ProcurementOrderSet) *h.ProcurementOrderData {
+			res := h.ProcurementOrder().NewData()
 			if !rs.Product().IsEmpty() {
-				return &h.ProcurementOrderData{
-					ProductUom: rs.Product().Uom(),
-				}, []models.FieldNamer{h.ProcurementOrder().ProductUom()}
+				res.SetProductUom(rs.ProductUom())
 			}
-			return &h.ProcurementOrderData{}, []models.FieldNamer{}
+			return res
 		})
 
 	h.ProcurementOrder().Methods().Cancel().DeclareMethod(
@@ -155,7 +154,7 @@ the procurement manager to force an unusual behavior.`},
 		func(rs h.ProcurementOrderSet) bool {
 			toCancel := rs.Search(q.ProcurementOrder().State().NotEquals("done"))
 			if !toCancel.IsEmpty() {
-				return toCancel.Write(&h.ProcurementOrderData{State: "cancel"})
+				return toCancel.Write(h.ProcurementOrder().NewData().SetState("cancel"))
 			}
 			return false
 		})
@@ -163,7 +162,7 @@ the procurement manager to force an unusual behavior.`},
 	h.ProcurementOrder().Methods().ResetToConfirmed().DeclareMethod(
 		`ResetToConfirmed sets this procurement back to the confirmed state.`,
 		func(rs h.ProcurementOrderSet) bool {
-			return rs.Write(&h.ProcurementOrderData{State: "confirmed"})
+			return rs.Write(h.ProcurementOrder().NewData().SetState("confirmed"))
 		})
 
 	h.ProcurementOrder().Methods().Run().DeclareMethod(
@@ -172,15 +171,15 @@ the procurement manager to force an unusual behavior.`},
 			runProcurement := func(proc h.ProcurementOrderSet) bool {
 				if !proc.Assign() {
 					//proc.MessagePost(rs.T("No rule matching this procurement"))
-					proc.Write(&h.ProcurementOrderData{State: "exception"})
+					proc.Write(h.ProcurementOrder().NewData().SetState("exception"))
 					return false
 				}
 				res := proc.RunPrivate()
 				if !res {
-					proc.Write(&h.ProcurementOrderData{State: "exception"})
+					proc.Write(h.ProcurementOrder().NewData().SetState("exception"))
 					return false
 				}
-				proc.Write(&h.ProcurementOrderData{State: "running"})
+				proc.Write(h.ProcurementOrder().NewData().SetState("running"))
 				return true
 			}
 
@@ -206,7 +205,7 @@ the procurement manager to force an unusual behavior.`},
 				if !proc.CheckPrivate() {
 					return false
 				}
-				proc.Write(&h.ProcurementOrderData{State: "done"})
+				proc.Write(h.ProcurementOrder().NewData().SetState("done"))
 				return true
 			}
 			rs.Load("State")
@@ -246,7 +245,7 @@ the procurement manager to force an unusual behavior.`},
 			}
 			rule := rs.FindSuitableRule()
 			if !rule.IsEmpty() {
-				rs.Write(&h.ProcurementOrderData{Rule: rule})
+				rs.Write(h.ProcurementOrder().NewData().SetRule(rule))
 				return true
 			}
 			return false
