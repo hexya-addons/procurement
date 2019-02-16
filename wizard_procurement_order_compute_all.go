@@ -7,6 +7,7 @@ import (
 	"github.com/hexya-erp/hexya/src/actions"
 	"github.com/hexya-erp/hexya/src/models"
 	"github.com/hexya-erp/pool/h"
+	"github.com/hexya-erp/pool/m"
 )
 
 func init() {
@@ -15,7 +16,7 @@ func init() {
 
 	h.ProcurementOrderComputeAll().Methods().ProcureCalculationAll().DeclareMethod(
 		`ProcureCalculationAll`,
-		func(rs h.ProcurementOrderComputeAllSet) {
+		func(rs m.ProcurementOrderComputeAllSet) {
 			models.ExecuteInNewEnvironment(rs.Env().Uid(), func(env models.Environment) {
 				// TODO Avoid to run the scheduler multiple times in the same time
 				companies := h.User().NewSet(env).CurrentUser().Companies()
@@ -27,7 +28,7 @@ func init() {
 
 	h.ProcurementOrderComputeAll().Methods().ProcureCalculation().DeclareMethod(
 		`ProcureCalculation`,
-		func(rs h.ProcurementOrderComputeAllSet) *actions.Action {
+		func(rs m.ProcurementOrderComputeAllSet) *actions.Action {
 			go rs.ProcureCalculationAll()
 			return &actions.Action{
 				Type: actions.ActionCloseWindow,

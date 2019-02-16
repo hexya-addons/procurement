@@ -10,6 +10,7 @@ import (
 	"github.com/hexya-erp/hexya/src/models/types"
 	"github.com/hexya-erp/hexya/src/models/types/dates"
 	"github.com/hexya-erp/pool/h"
+	"github.com/hexya-erp/pool/m"
 	"github.com/hexya-erp/pool/q"
 )
 
@@ -104,7 +105,7 @@ the procurement manager to force an unusual behavior.`},
 
 	//h.ProcurementOrder().Methods().NeedactionDomainGet().DeclareMethod(
 	//	`NeedactionDomainGet`,
-	//	func(rs h.ProcurementOrderSet) {
+	//	func(rs m.ProcurementOrderSet) {
 	//		//@api.model
 	//		/*def _needaction_domain_get(self):
 	//			  return [('state', '=', 'exception')]
@@ -112,7 +113,7 @@ the procurement manager to force an unusual behavior.`},
 	//		  */})
 
 	h.ProcurementOrder().Methods().Create().Extend("",
-		func(rs h.ProcurementOrderSet, data *h.ProcurementOrderData) h.ProcurementOrderSet {
+		func(rs m.ProcurementOrderSet, data m.ProcurementOrderData) m.ProcurementOrderSet {
 			procurement := rs.Super().Create(data)
 			if !rs.Env().Context().HasKey("procurement_autorun_defer") {
 				procurement.Run(false)
@@ -121,7 +122,7 @@ the procurement manager to force an unusual behavior.`},
 		})
 
 	h.ProcurementOrder().Methods().Unlink().Extend("",
-		func(rs h.ProcurementOrderSet) int64 {
+		func(rs m.ProcurementOrderSet) int64 {
 			for _, proc := range rs.Records() {
 				if proc.State() == "cancel" {
 					panic(rs.T("You cannot delete procurements that are in cancel state."))
@@ -133,7 +134,7 @@ the procurement manager to force an unusual behavior.`},
 	h.ProcurementOrder().Methods().DoViewProcurements().DeclareMethod(
 		`DoViewProcurements returns an action that display existing procurement orders
 			  of same procurement group of given ids`,
-		func(rs h.ProcurementOrderSet) *actions.Action {
+		func(rs m.ProcurementOrderSet) *actions.Action {
 			action := actions.Registry.GetById("procurement_do_view_procurements")
 			action.Domain = "[('group_id', 'in', self.mapped('group_id').ids)]"
 			return action
@@ -141,7 +142,7 @@ the procurement manager to force an unusual behavior.`},
 
 	h.ProcurementOrder().Methods().OnchangeProduct().DeclareMethod(
 		`OnchangeProduct updates the UI when the user changes product`,
-		func(rs h.ProcurementOrderSet) *h.ProcurementOrderData {
+		func(rs m.ProcurementOrderSet) m.ProcurementOrderData {
 			res := h.ProcurementOrder().NewData()
 			if !rs.Product().IsEmpty() {
 				res.SetProductUom(rs.ProductUom())
@@ -151,7 +152,7 @@ the procurement manager to force an unusual behavior.`},
 
 	h.ProcurementOrder().Methods().Cancel().DeclareMethod(
 		`Cancel these procurements`,
-		func(rs h.ProcurementOrderSet) bool {
+		func(rs m.ProcurementOrderSet) bool {
 			toCancel := rs.Search(q.ProcurementOrder().State().NotEquals("done"))
 			if !toCancel.IsEmpty() {
 				return toCancel.Write(h.ProcurementOrder().NewData().SetState("cancel"))
@@ -161,14 +162,14 @@ the procurement manager to force an unusual behavior.`},
 
 	h.ProcurementOrder().Methods().ResetToConfirmed().DeclareMethod(
 		`ResetToConfirmed sets this procurement back to the confirmed state.`,
-		func(rs h.ProcurementOrderSet) bool {
+		func(rs m.ProcurementOrderSet) bool {
 			return rs.Write(h.ProcurementOrder().NewData().SetState("confirmed"))
 		})
 
 	h.ProcurementOrder().Methods().Run().DeclareMethod(
 		`Run resolves these procurements`,
-		func(rs h.ProcurementOrderSet, autocommit bool) bool {
-			runProcurement := func(proc h.ProcurementOrderSet) bool {
+		func(rs m.ProcurementOrderSet, autocommit bool) bool {
+			runProcurement := func(proc m.ProcurementOrderSet) bool {
 				if !proc.Assign() {
 					//proc.MessagePost(rs.T("No rule matching this procurement"))
 					proc.Write(h.ProcurementOrder().NewData().SetState("exception"))
@@ -200,8 +201,8 @@ the procurement manager to force an unusual behavior.`},
 
 	h.ProcurementOrder().Methods().Check().DeclareMethod(
 		`Check updates the state of fulfilled procurements to done.`,
-		func(rs h.ProcurementOrderSet, autocommit bool) bool {
-			checkProcurement := func(proc h.ProcurementOrderSet) bool {
+		func(rs m.ProcurementOrderSet, autocommit bool) bool {
+			checkProcurement := func(proc m.ProcurementOrderSet) bool {
 				if !proc.CheckPrivate() {
 					return false
 				}
@@ -226,7 +227,7 @@ the procurement manager to force an unusual behavior.`},
 	h.ProcurementOrder().Methods().FindSuitableRule().DeclareMethod(
 		`FindSuitableRuler eturns a procurement.rule that depicts what to do with the given procurement
 			  in order to complete its needs.`,
-		func(rs h.ProcurementOrderSet) h.ProcurementRuleSet {
+		func(rs m.ProcurementOrderSet) m.ProcurementRuleSet {
 			return h.ProcurementRule().NewSet(rs.Env())
 		})
 
@@ -234,7 +235,7 @@ the procurement manager to force an unusual behavior.`},
 		`Assign check what to do with the given procurement in order to complete its needs.
 			  It returns False if no solution is found, otherwise it stores the matching rule (if any) and
 			  returns True.`,
-		func(rs h.ProcurementOrderSet) bool {
+		func(rs m.ProcurementOrderSet) bool {
 			// if the procurement already has a rule assigned, we keep it (it has a higher priority as it may have
 			// been chosen manually)
 			if !rs.Rule().IsEmpty() {
@@ -254,13 +255,13 @@ the procurement manager to force an unusual behavior.`},
 	h.ProcurementOrder().Methods().RunPrivate().DeclareMethod(
 		`RunPrivate implements the resolution of the given procurement.
 		It returns true if the resolution of the procurement was a success, false otherwise to set it in exception`,
-		func(rs h.ProcurementOrderSet) bool {
+		func(rs m.ProcurementOrderSet) bool {
 			return true
 		})
 
 	h.ProcurementOrder().Methods().CheckPrivate().DeclareMethod(
 		`CheckPrivate returns True if the given procurement is fulfilled, False otherwise`,
-		func(rs h.ProcurementOrderSet) bool {
+		func(rs m.ProcurementOrderSet) bool {
 			return false
 		})
 
@@ -273,7 +274,7 @@ the procurement manager to force an unusual behavior.`},
 
 		 If useNewCursor is set, each procurement run is done in a new
          environment with a new cursor. This is appropriate for batch jobs only.`,
-		func(rs h.ProcurementOrderSet, useNewCursor bool, company h.CompanySet) {
+		func(rs m.ProcurementOrderSet, useNewCursor bool, company m.CompanySet) {
 			procurementSudo := h.ProcurementOrder().NewSet(rs.Env()).Sudo()
 			// Run confirmed procurements
 			cond := q.ProcurementOrder().State().Equals("confirmed")

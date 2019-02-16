@@ -11,6 +11,7 @@ import (
 	"github.com/hexya-erp/hexya/src/models/security"
 	"github.com/hexya-erp/hexya/src/tests"
 	"github.com/hexya-erp/pool/h"
+	"github.com/hexya-erp/pool/m"
 	"github.com/hexya-erp/pool/q"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -19,7 +20,7 @@ func TestMain(m *testing.M) {
 	tests.RunTests(m, "procurement")
 }
 
-func createProcurement(env models.Environment, uid int64, values *h.ProcurementOrderData) h.ProcurementOrderSet {
+func createProcurement(env models.Environment, uid int64, values m.ProcurementOrderData) m.ProcurementOrderSet {
 	proc := h.ProcurementOrder().NewSet(env).Sudo(uid).Create(values)
 	changedVals := proc.OnchangeProduct()
 	proc.Write(changedVals)
