@@ -144,8 +144,8 @@ the procurement manager to force an unusual behavior.`},
 		`OnchangeProduct updates the UI when the user changes product`,
 		func(rs m.ProcurementOrderSet) m.ProcurementOrderData {
 			res := h.ProcurementOrder().NewData()
-			if !rs.Product().IsEmpty() {
-				res.SetProductUom(rs.ProductUom())
+			if rs.Product().IsNotEmpty() {
+				res.SetProductUom(rs.Product().Uom())
 			}
 			return res
 		})
@@ -154,7 +154,7 @@ the procurement manager to force an unusual behavior.`},
 		`Cancel these procurements`,
 		func(rs m.ProcurementOrderSet) bool {
 			toCancel := rs.Search(q.ProcurementOrder().State().NotEquals("done"))
-			if !toCancel.IsEmpty() {
+			if toCancel.IsNotEmpty() {
 				return toCancel.Write(h.ProcurementOrder().NewData().SetState("cancel"))
 			}
 			return false

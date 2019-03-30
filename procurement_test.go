@@ -11,20 +11,12 @@ import (
 	"github.com/hexya-erp/hexya/src/models/security"
 	"github.com/hexya-erp/hexya/src/tests"
 	"github.com/hexya-erp/pool/h"
-	"github.com/hexya-erp/pool/m"
 	"github.com/hexya-erp/pool/q"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMain(m *testing.M) {
 	tests.RunTests(m, "procurement")
-}
-
-func createProcurement(env models.Environment, uid int64, values m.ProcurementOrderData) m.ProcurementOrderSet {
-	proc := h.ProcurementOrder().NewSet(env).Sudo(uid).Create(values)
-	changedVals := proc.OnchangeProduct()
-	proc.Write(changedVals)
-	return proc
 }
 
 func TestBase(t *testing.T) {
@@ -54,11 +46,12 @@ func TestBase(t *testing.T) {
 				SetUomPo(uomDunit))
 
 			Convey("Procurement Order should be in exception as there is no suitable rule", func() {
-				procurement := createProcurement(env, userEmployee.ID(),
+				procurement := h.ProcurementOrder().NewSet(env).Sudo(userEmployee.ID()).Create(
 					h.ProcurementOrder().NewData().
 						SetProduct(product1).
 						SetName("Procurement Test").
-						SetProductQty(15))
+						SetProductQty(15).
+						SetProductUom(product1.Uom()))
 				So(procurement.State(), ShouldEqual, "exception")
 			})
 		}), ShouldBeNil)
