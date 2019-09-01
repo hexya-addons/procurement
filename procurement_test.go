@@ -16,7 +16,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	tests.RunTests(m, "procurement")
+	tests.RunTests(m, "procurement", nil)
 }
 
 func TestBase(t *testing.T) {
